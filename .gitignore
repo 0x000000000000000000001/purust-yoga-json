@@ -1,6 +1,7 @@
 /bower_components/
 /node_modules/
-/output/
+output/
+output.bak/
 /.psc-package/
 /.psc*
 /.purs*
