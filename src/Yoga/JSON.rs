@@ -38,6 +38,7 @@ fn purust_json_fields(fields: Vec<(String, crate::UnknownType)>) -> String {
 
 pub fn Yoga_JSON__unsafeStringify(value: crate::UnknownType) -> String {
     match value.resolve() {
+        crate::Value::Null => "null".into(),
         crate::Value::Int(n) => n.to_string(),
         crate::Value::Number(n) if !n.is_finite() => "null".into(),
         crate::Value::Number(n) => ryu_js::Buffer::new().format_finite(*n).to_owned(),
