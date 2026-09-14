@@ -550,14 +550,19 @@ fn purust_json_revive(value: crate::UnknownType) -> crate::UnknownType {
     results.pop().expect("JSON root")
 }
 
+// Raw JSON.parse semantics shared with callers which do not use a reviver.
+pub fn purust_json_parse_raw(input: String) -> crate::UnknownType {
+    PurustJsonParser {
+        units: purust_core::purust_string_to_utf16(&input),
+        position: 0,
+    }
+    .parse()
+}
+
 pub fn Yoga_JSON__parseJSON() -> crate::UnknownType {
     // EffectFn1 is a direct uncurried callback; runEffectFn1 supplies the thunk.
     crate::Value::Func1(purust_core::Func1::Static(|payload| {
-        let value = PurustJsonParser {
-            units: purust_core::purust_string_to_utf16(&payload.unwrap_string()),
-            position: 0,
-        }
-        .parse();
+        let value = purust_json_parse_raw(payload.unwrap_string());
         purust_json_revive(value)
     }))
 }
