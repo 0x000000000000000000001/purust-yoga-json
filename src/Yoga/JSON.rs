@@ -110,6 +110,12 @@ pub fn Yoga_JSON__undefined() -> crate::UnknownType {
     crate::Value::Unit
 }
 
+/// The native `Nullable` carrier hides a missing value; JSON writes it as the
+/// JavaScript `null` that the same code would write through `toNullable`.
+pub fn Yoga_JSON__null() -> crate::UnknownType {
+    crate::Value::Null
+}
+
 pub fn Yoga_JSON__unsafePrettyStringify(spaces: i64, value: crate::UnknownType) -> String {
     // Formatting the qualified compact form keeps quoting and property order identical.
     let compact = Yoga_JSON__unsafeStringify(value);

@@ -186,6 +186,8 @@ foreign import _undefined ∷ Foreign
 undefined ∷ Foreign
 undefined = _undefined
 
+foreign import _null ∷ Foreign
+
 -- | A class for reading foreign values to a type
 class ReadForeign a where
   readImpl ∷ Foreign → F a
@@ -451,7 +453,9 @@ instance WriteForeign a ⇒ WriteForeign (Maybe a) where
   writeImpl = maybe undefined writeImpl
 
 instance WriteForeign a ⇒ WriteForeign (Nullable a) where
-  writeImpl = maybe (unsafeToForeign $ toNullable Nothing) writeImpl <<< toMaybe
+  -- JavaScript `Nullable` is `null | a`; the native carrier is a class, so a
+  -- missing value must be written as the JavaScript null it represents.
+  writeImpl = maybe _null writeImpl <<< toMaybe
 
 instance (WriteForeign a, WriteForeign b) ⇒ WriteForeign (Either a b) where
   writeImpl value = case value of
