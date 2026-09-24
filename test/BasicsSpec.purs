@@ -29,7 +29,7 @@ import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Util (roundtrips)
 import Type.Proxy (Proxy(..))
-import Yoga.JSON (class ReadForeign, class WriteForeign, readJSON, writeJSON)
+import Yoga.JSON (class ReadForeign, class WriteForeign, E, readJSON, writeJSON)
 import Yoga.JSON.Variant (TaggedVariant(..), UntaggedVariant(..))
 import Yoga.Tree (Tree, mkLeaf, mkTree, showTree)
 
@@ -187,6 +187,47 @@ spec = describe "En- and decoding" do
       let t = mkTree "a" [ mkTree "b" [ mkLeaf "c", mkLeaf "d" ] ]
       writeJSON (ShowTree t) `shouldEqual`
         """{"value":"a","children":[{"value":"b","children":[{"value":"c"},{"value":"d"}]}]}"""
+
+  describe "null and undefined" do
+    it "reads null as Nothing" do
+      (readJSON "null" ∷ E (Maybe Int)) `shouldEqual` Right Nothing
+
+    it "reads null as Nullable.null" do
+      (readJSON "null" ∷ E (Nullable.Nullable Int)) `shouldEqual` Right Nullable.null
+
+    it "writes Nullable.null as null" do
+      writeJSON (Nullable.null ∷ Nullable.Nullable Int) `shouldEqual` "null"
+
+    it "reads a null field as Nothing" do
+      (readJSON """{ "empty": null }""" ∷ E { empty ∷ Maybe Int })
+        `shouldEqual` Right { empty: Nothing }
+
+    it "omits a Nothing field, like JSON.stringify does" do
+      -- JavaScript represents `Maybe`'s `Nothing` as `undefined`, so an object
+      -- field simply disappears; `writeJSON Nothing` itself has no JSON value
+      -- (the upstream suite avoids it for the same reason).
+      let
+        value = { kept: 1 ∷ Int, empty: Nothing ∷ Maybe Int }
+        json = writeJSON value
+      json `shouldEqual` """{"kept":1}"""
+      (readJSON json ∷ E { kept ∷ Int, empty ∷ Maybe Int }) `shouldEqual` Right value
+
+    it "rejects undefined" do
+      (readJSON "undefined" ∷ E (Maybe Int))
+        `shouldEqual` Left (pure (ForeignError "Unexpected token in JSON at position 0"))
+
+    it "rejects null for a non-nullable type" do
+      (readJSON "null" ∷ E Int)
+        `shouldEqual` Left (pure (TypeMismatch "Int" "Null"))
+
+    it "rejects empty input" do
+      (readJSON "" ∷ E Int)
+        `shouldEqual` Left (pure (ForeignError "Unexpected end of JSON input in JSON at position 0"))
+
+    it "rejects trailing content" do
+      (readJSON "1 2" ∷ E Int)
+        `shouldEqual`
+          Left (pure (ForeignError "Unexpected non-whitespace character after JSON in JSON at position 2"))
 
 newtype ShowTree = ShowTree (Tree String)
 
