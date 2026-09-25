@@ -8,6 +8,8 @@ export const _parseJSON = (payload) => JSON.parse(payload, reviver);
 
 export const _undefined = undefined;
 
+export const _null = null;
+
 function replacer(key, value) {
   if (typeof value === "bigint") {
     return value.toString();
