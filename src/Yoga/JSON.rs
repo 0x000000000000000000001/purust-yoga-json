@@ -57,6 +57,10 @@ pub fn Yoga_JSON__unsafeStringify(value: crate::UnknownType) -> String {
         crate::Value::Bool(b) => b.to_string(),
         crate::Value::String(s) => purust_json_quote(s),
         crate::Value::Char(c) => purust_json_quote(&c.to_string()),
+        crate::Value::IntArray(_) => {
+            let boxed = crate::Value::Array(value.unwrap_array());
+            Yoga_JSON__unsafeStringify(boxed)
+        }
         crate::Value::Array(values) => format!(
             "[{}]",
             values
@@ -420,6 +424,11 @@ fn purust_json_bigint_string(value: &crate::UnknownType) -> String {
         crate::Value::Null | crate::Value::Unit => String::new(),
         crate::Value::Bool(b) => b.to_string(),
         crate::Value::Number(n) => ryu_js::Buffer::new().format(*n).into(),
+        crate::Value::IntArray(values) => values
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>()
+            .join(","),
         crate::Value::Array(values) => values
             .iter()
             .map(purust_json_bigint_string)
@@ -503,6 +512,7 @@ fn purust_json_revive(value: crate::UnknownType) -> crate::UnknownType {
         Array(String, usize),
         Object(String, Vec<String>),
     }
+    let value = if value.resolve().int_array().is_some() { crate::Value::Array(value.unwrap_array()) } else { value };
     let mut visits = vec![Visit::Enter(String::new(), value)];
     let mut results = Vec::new();
     while let Some(visit) = visits.pop() {
