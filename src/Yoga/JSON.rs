@@ -57,7 +57,7 @@ pub fn Yoga_JSON__unsafeStringify(value: crate::UnknownType) -> String {
         crate::Value::Bool(b) => b.to_string(),
         crate::Value::String(s) => purust_json_quote(s),
         crate::Value::Char(c) => purust_json_quote(&c.to_string()),
-        crate::Value::IntArray(_) => {
+        crate::Value::IntArray(_) | crate::Value::NativeArray(_) => {
             let boxed = crate::Value::Array(value.unwrap_array());
             Yoga_JSON__unsafeStringify(boxed)
         }
@@ -434,6 +434,8 @@ fn purust_json_bigint_string(value: &crate::UnknownType) -> String {
             .map(purust_json_bigint_string)
             .collect::<Vec<_>>()
             .join(","),
+        crate::Value::NativeArray(_) => value.array_iter()
+            .map(|item| purust_json_bigint_string(&item)).collect::<Vec<_>>().join(","),
         crate::Value::Class(native) => {
             if let Some(integer) = native.downcast_ref::<Rc<Purs_JS_BigInt::BigInt>>() {
                 return integer.to_string();
@@ -512,7 +514,7 @@ fn purust_json_revive(value: crate::UnknownType) -> crate::UnknownType {
         Array(String, usize),
         Object(String, Vec<String>),
     }
-    let value = if value.resolve().int_array().is_some() { crate::Value::Array(value.unwrap_array()) } else { value };
+    let value = if matches!(value.resolve(), crate::Value::IntArray(_) | crate::Value::NativeArray(_)) { crate::Value::Array(value.unwrap_array()) } else { value };
     let mut visits = vec![Visit::Enter(String::new(), value)];
     let mut results = Vec::new();
     while let Some(visit) = visits.pop() {
