@@ -12,3 +12,4 @@ output.bak/
 /.idea/
 .spec-results
 .DS_Store
+.purmeta/
